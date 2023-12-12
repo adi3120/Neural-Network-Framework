@@ -45,7 +45,7 @@ def MSE_Loss(activations, actual):
 def CrossEntropy_Loss(activations, actual):
     activations = activations[0]
     loss = -np.sum(actual * np.log(activations) + (1 - actual) * np.log(1 - activations))
-    return loss
+    return loss/len(activations)
 
 
 def MSE_Derivative(activations,actual):
