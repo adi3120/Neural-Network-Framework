@@ -10,10 +10,12 @@ def ReLUActivation(x):
 def noActivation(x):
   return x
 def TanhActivation(x):
-    return np.tanh(x)
+  return np.tanh(x)
 def SoftmaxActivation(x):
-    exp_values = np.exp(x - np.max(x, axis=-1, keepdims=True))
-    return exp_values / np.sum(exp_values, axis=-1, keepdims=True)
+    exp_values = np.exp(x - np.max(x))
+    activations=exp_values / np.sum(exp_values)
+    # print(activations)
+    return activations
 
 def sigmoid_derivative(x):
     sigmoid_x = 1 / (1 + np.exp(-x))
@@ -25,8 +27,12 @@ def noActDerivative(x):
 def TanhDerivative(x):
     return 1 - np.tanh(x)**2
 def softmax_derivative(x):
-    s = np.exp(x)
-    return s / np.sum(s, axis=1, keepdims=True) * (1 - s / np.sum(s, axis=1, keepdims=True))
+    s = SoftmaxActivation(x)
+    dsoftmax = np.diagflat(s) - np.outer(s, s)
+    # print(dsoftmax)
+    # print("done")
+    return dsoftmax
+
 
 def MSE_Loss(activations, actual):
     loss = 0
@@ -37,11 +43,9 @@ def MSE_Loss(activations, actual):
     return (1 / len(activations)) * loss
 
 def CrossEntropy_Loss(activations, actual):
-    activations=activations[0]
-    epsilon = 1e-15  # Small value to prevent log(0)
-    clipped_activations = np.clip(activations, epsilon, 1 - epsilon)
-    loss = -np.sum(actual * np.log(clipped_activations))
-    return loss / len(activations)
+    activations = activations[0]
+    loss = -np.sum(actual * np.log(activations) + (1 - actual) * np.log(1 - activations))
+    return loss
 
 
 def MSE_Derivative(activations,actual):
@@ -54,8 +58,8 @@ def MSE_Derivative(activations,actual):
     dLdy+=(2/len(activations))*(activations[i]-y[i])
   return dLdy
 def CrossEntropy_Derivative(activations, actual):
-    activations=activations[0]
-    return activations - actual
+    activations = activations[0]
+    return np.array(activations - actual).reshape(-1,1)
 
 class Layer():
   def __init__(self,n):
@@ -226,17 +230,28 @@ class OutputLayer():
       dyda = noActDerivative(self.pre_activations[0])
     elif self.actname=="softmax":
       dyda = softmax_derivative(self.pre_activations[0])
-
+    #   print("dyda: ",dyda)
+    #   print("dyda shape: ",dyda.shape)
 
     dadW=self.previous.activations
-
-    dyda=dyda.reshape(-1,1)
+    # print("dLdy: ",dLdy)
+    # print("dLdy shape: ",dLdy.shape)
+    
+    if self.actname=="softmax":
+        dyda=dyda
+    else:
+        dyda=dyda.reshape(-1,1)
+        
     dadW=dadW.reshape(-1,1)
-
-    dLdW = np.dot(dLdy*dyda, dadW.T)
+    if self.actname!="softmax":
+      dLda=dLdy*dyda
+    else:
+      dLda=np.dot(dyda,dLdy)
+    # print("dLda: ",dLda)
+    dLdW = np.dot(dLda, dadW.T)
 
     self.dLdy=dLdy
     self.dyda=dyda
-    self.dLda=dLdy*dyda
+    self.dLda=dLda
     self.dLdW=dLdW
 
