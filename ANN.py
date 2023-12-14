@@ -42,7 +42,7 @@ def MSE_Loss(activations, actual):
         loss += (activations[i] - actual[i]) ** 2
     return (1 / len(activations)) * loss
 
-def CrossEntropy_Loss(activations, actual):
+def Binary_CrossEntropy_Loss(activations, actual):
     activations = activations[0]
     loss = -np.sum(actual * np.log(activations) + (1 - actual) * np.log(1 - activations))
     return loss/len(activations)
@@ -57,9 +57,9 @@ def MSE_Derivative(activations,actual):
   for i in range(0,len(y)):
     dLdy+=(2/len(activations))*(activations[i]-y[i])
   return dLdy
-def CrossEntropy_Derivative(activations, actual):
+def Binary_CrossEntropy_Derivative(activations, actual):
     activations = activations[0]
-    return np.array(activations - actual).reshape(-1,1)
+    return np.array((activations - actual) / (activations * (1 - activations))).reshape(-1,1)
 
 class Layer():
   def __init__(self,n):
@@ -181,14 +181,17 @@ class OutputLayer():
     elif outputfn=="softmax":
       self.outputfn=SoftmaxActivation
       self.actname="softmax"
+    elif outputfn=="tanh":
+      self.outputfn=TanhActivation
+      self.actname="tanh"
 
     if lossfn=="MSE":
       self.lossfn=MSE_Loss
       self.lossfnname="MSE"
 
-    elif lossfn=="crossentropy":
-      self.lossfn=CrossEntropy_Loss
-      self.lossfnname="crossentropy"
+    elif lossfn=="bincrossentropy":
+      self.lossfn=Binary_CrossEntropy_Loss
+      self.lossfnname="bincrossentropy"
 
 
   def attach_after(self,layer):
@@ -219,8 +222,8 @@ class OutputLayer():
   def backward(self):
     if self.lossfnname=="MSE":
       dLdy=MSE_Derivative(self.activations,self.actual)
-    elif self.lossfnname=="crossentropy":
-      dLdy=CrossEntropy_Derivative(self.activations,self.actual)
+    elif self.lossfnname=="bincrossentropy":
+      dLdy=Binary_CrossEntropy_Derivative(self.activations,self.actual)
 
     if self.actname=="sigmoid":
       dyda = sigmoid_derivative(self.pre_activations[0])
@@ -230,6 +233,8 @@ class OutputLayer():
       dyda = noActDerivative(self.pre_activations[0])
     elif self.actname=="softmax":
       dyda = softmax_derivative(self.pre_activations[0])
+    elif self.actname=="tanh":
+      dyda=TanhDerivative(self.pre_activations)
     #   print("dyda: ",dyda)
     #   print("dyda shape: ",dyda.shape)
 

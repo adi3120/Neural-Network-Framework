@@ -2,9 +2,9 @@ from ANN import *
 
 eta=0.1
 
-i=InputLayer(2,"tanh")
+i=InputLayer(2,"sigmoid")
 
-h1=HiddenLayer(1,"tanh")
+h1=HiddenLayer(2,"sigmoid")
 h1.attach_after(i)
 h1.set_weights("random")
 
